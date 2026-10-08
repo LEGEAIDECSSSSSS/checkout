@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700;800&display=swap">
+<style>
+:root{
+  --paper:#EAF0ED; --ink:#14211D; --muted:#55645F; --line:#CBD6D1;
+  --till:#0E5E47; --till-hover:#0A4A38; --slip:#FFFFFF; --warn:#B3261E;
+  font-family:Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.45}
+.num{font-variant-numeric:tabular-nums}
+header{padding:20px 28px 0}
+header h1{margin:0;font-size:1.25rem;font-weight:800;letter-spacing:-.01em}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:32px;padding:20px 28px 40px;max-width:1120px;margin:0 auto;align-items:start}
+@media(max-width:880px){.layout{grid-template-columns:1fr;padding:16px}}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+fieldset:disabled{opacity:.5}
+.entry{display:grid;grid-template-columns:1fr 110px 80px auto;gap:12px;align-items:end}
+@media(max-width:560px){.entry{grid-template-columns:1fr 1fr}.entry .name{grid-column:1/-1}.entry button{grid-column:1/-1}}
+label{display:block;font-size:.85rem;font-weight:500;color:var(--muted);margin-bottom:4px}
+input{width:100%;font:inherit;padding:11px 12px;border:1.5px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:3px solid #7FC8AE;outline-offset:1px}
+button{font:inherit;font-weight:700;border:0;border-radius:6px;padding:12px 18px;cursor:pointer;background:var(--till);color:#fff}
+button:hover:not(:disabled){background:var(--till-hover)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.quiet{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+button.quiet:hover:not(:disabled){background:#fff}
+.error{color:var(--warn);font-size:.9rem;min-height:1.3em;margin:8px 0 0}
+.cart{list-style:none;margin:20px 0 0;padding:0;border-top:1.5px solid var(--ink)}
+.cart li{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.cart .nm{font-weight:700;overflow-wrap:anywhere}
+.cart .sub{font-size:.85rem;color:var(--muted)}
+.step{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:6px;background:#fff}
+.step button{background:none;color:var(--ink);padding:4px 11px;font-size:1.1rem;border-radius:0}
+.step button:hover:not(:disabled){background:var(--paper)}
+.step span{min-width:28px;text-align:center;font-weight:700}
+.empty{color:var(--muted);padding:28px 0}
+.discount{margin-top:20px;max-width:200px}
+.slip-wrap{position:sticky;top:16px}
+.slip{position:relative;background:var(--slip);padding:26px 24px 22px;box-shadow:0 1px 0 var(--line),0 12px 28px -14px rgba(20,33,29,.35)}
+.slip::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;background:linear-gradient(135deg,var(--slip) 5px,transparent 0) 0 0/10px 10px repeat-x,linear-gradient(225deg,var(--slip) 5px,transparent 0) 0 0/10px 10px repeat-x}
+.slip h2{margin:0 0 2px;font-size:1rem;font-weight:700}
+.slip .meta{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+.lines{list-style:none;margin:0;padding:0 0 12px;border-bottom:1.5px dashed var(--line)}
+.lines li{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
+.lines small{display:block;color:var(--muted)}
+.rows{padding-top:12px}
+.rows div{display:flex;justify-content:space-between;padding:3px 0;color:var(--muted)}
+.grand{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:12px;border-top:1.5px solid var(--ink)}
+.grand span:first-child{font-weight:700}
+.grand .amt{font-size:2.4rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.actions{display:grid;gap:10px;margin-top:26px}
+.actions .big{padding:16px;font-size:1.1rem}
+.done{background:#DDF1E8;border-radius:6px;padding:12px 14px;margin-bottom:12px;font-weight:500}
+@media print{
+  body{background:#fff}header,.entry-col,.actions,.done{display:none}
+  .layout{display:block;padding:0}.slip-wrap{position:static}.slip{box-shadow:none}.slip::after{display:none}
+}
+</style>
+</head>
+<body>
+<header><h1>Checkout</h1></header>
+<main class="layout">
+  <section class="entry-col" aria-label="Sale">
+    <fieldset id="sale-fields">
+      <form id="add-form" class="entry" autocomplete="off">
+        <div class="name"><label for="name">Item</label><input id="name" required maxlength="80"></div>
+        <div><label for="price">Price (₦)</label><input id="price" class="num" type="number" min="0" step="0.01" inputmode="decimal" required></div>
+        <div><label for="qty">Qty</label><input id="qty" class="num" type="number" min="1" step="1" value="1" inputmode="numeric" required></div>
+        <button type="submit">Add item</button>
+      </form>
+      <ul id="cart" class="cart"></ul>
+      <div class="discount">
+        <label for="discount">Discount (₦)</label>
+        <input id="discount" class="num" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+      </div>
+    </fieldset>
+    <p id="error" class="error" role="alert"></p>
+  </section>
+
+  <aside class="slip-wrap" aria-label="Receipt">
+    <div id="done" class="done" hidden></div>
+    <div class="slip">
+      <h2 id="slip-title">Current sale</h2>
+      <div id="slip-meta" class="meta"></div>
+      <ul id="slip-lines" class="lines"></ul>
+      <div class="rows num">
+        <div><span>Subtotal</span><span id="r-sub"></span></div>
+        <div><span>Discount</span><span id="r-disc"></span></div>
+        <div><span id="r-vat-label">VAT</span><span id="r-vat"></span></div>
+      </div>
+      <div class="grand num"><span>Total</span><span class="amt" id="r-total"></span></div>
+    </div>
+    <div class="actions">
+      <button id="complete" class="big" type="button" disabled>Complete sale</button>
+      <button id="print" class="quiet" type="button" hidden>Print receipt</button>
+      <button id="new" class="quiet" type="button" hidden>Start new sale</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = { items: [], discount: "", totals: null, sale: null };
+let seq = 0;
+
+const naira = n => "₦" + Number(n || 0).toLocaleString("en-NG", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const setError = msg => { $("#error").textContent = msg || ""; };
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: {"Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data.detail;
+    throw new Error(Array.isArray(d) ? d.map(e => e.msg).join(". ") : (d || "Something went wrong. Try again."));
+  }
+  return data;
+}
+
+const payload = () => ({
+  items: state.items.map(i => ({name: i.name, price: i.price, quantity: i.quantity})),
+  discount: state.discount || "0",
+});
+
+async function refresh() {
+  const mine = ++seq;
+  if (!state.items.length) { state.totals = null; setError(""); return render(); }
+  try {
+    const t = await api("/api/invoices/preview", payload());
+    if (mine !== seq) return;
+    state.totals = t; setError("");
+  } catch (e) {
+    if (mine !== seq) return;
+    state.totals = null; setError(e.message);
+  }
+  render();
+}
+
+function li(...kids) { const el = document.createElement("li"); el.append(...kids); return el; }
+function span(text, cls) { const s = document.createElement("span"); s.textContent = text; if (cls) s.className = cls; return s; }
+
+function render() {
+  const t = state.sale || state.totals;
+  const cart = $("#cart"); cart.replaceChildren();
+  if (!state.items.length) {
+    const p = document.createElement("li"); p.className = "empty"; p.style.display = "block";
+    p.textContent = "No items yet. Enter an item, price and quantity, then press Add item.";
+    cart.append(p);
+  }
+  state.items.forEach((it, idx) => {
+    const info = document.createElement("div");
+    info.append(span(it.name, "nm"), document.createElement("br"),
+      span(`${naira(it.price)} each`, "sub num"));
+    const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−";
+    minus.setAttribute("aria-label", `Remove one ${it.name}`);
+    minus.onclick = () => { it.quantity -= 1; if (it.quantity < 1) state.items.splice(idx, 1); refresh(); };
+    const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+";
+    plus.setAttribute("aria-label", `Add one ${it.name}`);
+    plus.onclick = () => { it.quantity += 1; refresh(); };
+    const step = document.createElement("div"); step.className = "step";
+    step.append(minus, span(String(it.quantity), "num"), plus);
+    const lineTotal = t && t.items[idx] ? naira(t.items[idx].total) : "";
+    cart.append(li(info, step, span(lineTotal, "num nm")));
+  });
+
+  $("#slip-title").textContent = state.sale ? `Receipt ${state.sale.number}` : "Current sale";
+  $("#slip-meta").textContent = state.sale
+    ? new Date(state.sale.created_at).toLocaleString("en-NG", {dateStyle: "medium", timeStyle: "short"})
+    : "Totals update as you add items";
+  const lines = $("#slip-lines"); lines.replaceChildren();
+  (t ? t.items : []).forEach(i => {
+    const left = document.createElement("div");
+    left.append(span(i.name), (() => { const s = document.createElement("small"); s.className = "num";
+      s.textContent = `${i.quantity} × ${naira(i.unit_price)}`; return s; })());
+    lines.append(li(left, span(naira(i.total), "num")));
+  });
+  if (!t) lines.append(li(span("No items added yet")));
+  $("#r-sub").textContent = naira(t && t.subtotal);
+  $("#r-disc").textContent = t && Number(t.discount) ? "−" + naira(t.discount) : naira(0);
+  $("#r-vat-label").textContent = `VAT${t ? ` (${(Number(t.vat_rate) * 100).toFixed(1)}%)` : ""}`;
+  $("#r-vat").textContent = naira(t && t.vat);
+  $("#r-total").textContent = naira(t && t.total);
+
+  const done = !!state.sale;
+  $("#sale-fields").disabled = done;
+  $("#complete").hidden = done; $("#complete").disabled = !state.totals;
+  $("#print").hidden = !done; $("#new").hidden = !done;
+  $("#done").hidden = !done;
+  if (done) $("#done").textContent = `Sale ${state.sale.number} saved. Print the receipt or start the next customer.`;
+}
+
+$("#add-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("#name").value.trim();
+  if (!name) return setError("Item name can't be blank.");
+  const price = $("#price").value, quantity = parseInt($("#qty").value, 10);
+  const existing = state.items.find(i => i.name.toLowerCase() === name.toLowerCase() && i.price === price);
+  if (existing) existing.quantity += quantity; else state.items.push({name, price, quantity});
+  $("#name").value = ""; $("#price").value = ""; $("#qty").value = "1"; $("#name").focus();
+  refresh();
+});
+
+let timer;
+$("#discount").addEventListener("input", e => {
+  state.discount = e.target.value; clearTimeout(timer); timer = setTimeout(refresh, 250);
+});
+
+$("#complete").addEventListener("click", async () => {
+  $("#complete").disabled = true;
+  try { state.sale = await api("/api/invoices", payload()); setError(""); }
+  catch (e) { setError(e.message); }
+  render();
+});
+$("#print").addEventListener("click", () => window.print());
+$("#new").addEventListener("click", () => {
+  state.items = []; state.discount = ""; state.totals = null; state.sale = null;
+  $("#discount").value = ""; refresh(); $("#name").focus();
+});
+
+render(); $("#name").focus();
+</script>
+</body>
+</html>
